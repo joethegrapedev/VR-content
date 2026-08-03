@@ -1,54 +1,70 @@
-# VR Warehouse Safety
+# RSAF VR Warehouse Safety
 
-This repository contains the current Windows build of the VR Warehouse Safety application and a basic setup guide so it can be run on another machine without needing this laptop.
+A VR warehouse safety training application built in Unity (2021.3.12f1). Two ways to run it are provided below — a **standalone Meta Quest build** (recommended: no PC required at runtime, works from any host OS) and the original **Windows PC VR build** (Oculus Rift/Quest Link, Windows only).
 
-## What is included
+## Option 1: Meta Quest standalone (recommended)
 
-- The executable: RSAF_VRWarehouse.exe
-- The runtime data folder: RSAF_VRWarehouse_Data/
-- Supporting runtime files such as the Oculus runtime components and Unity runtime files in the workspace root
+Once installed, this runs entirely on the headset — no PC, no Oculus/Meta Link software, no cables needed at runtime. Any computer (Windows, Mac, or Linux) can be used to do the one-time install via `adb`.
 
-> This repository is intended to preserve the current stable build as-is. No package updates or code changes have been applied.
+### Prerequisites
 
-## Prerequisites
+- A Meta Quest headset (2, 3, or Pro) with **Developer Mode** enabled on your Meta account and the headset (see [Meta's developer mode guide](https://developer.oculus.com/documentation/native/android/mobile-device-setup/))
+- A USB-C cable to connect the headset to your computer
+- [Android Platform Tools](https://developer.android.com/tools/releases/platform-tools) (`adb`) installed, or [SideQuest](https://sidequestvr.com/) if you prefer a GUI
 
-On the target machine, install:
+### Install steps
+
+1. Download `RSAF_VRWarehouse.apk` from the [latest release](../../releases/latest).
+2. Connect the headset via USB-C and put it on — approve the "Allow USB Debugging" prompt that appears in the headset.
+3. Install via command line:
+   ```bash
+   adb install RSAF_VRWarehouse.apk
+   ```
+   Or via SideQuest: drag-and-drop the `.apk` file onto the SideQuest window.
+4. In the headset, go to **Library → Unknown Sources** (or **App Library** filtered to "Unknown Sources") and launch **RSAF_VRWarehouse**.
+
+### Troubleshooting
+
+- `adb devices` should list your headset before running `adb install` — if it shows nothing, re-check Developer Mode and USB debugging authorization on the headset.
+- If install fails with `INSTALL_FAILED_INSUFFICIENT_STORAGE`, free up space on the headset.
+- This build targets ARMv7 (32-bit) — this is intentional (matches the original app's Mono scripting backend) and works fine for sideloaded, non-Store use on all current Quest headsets.
+
+## Option 2: Windows PC VR build (Oculus Rift / Quest Link)
+
+The original Windows Unity Player build, for use with the Oculus PC app. **Windows only** — Meta's PC Link software has no macOS equivalent, so this option will not work on a Mac.
+
+### Prerequisites
 
 - Windows 10 or 11
 - The Oculus PC app
-- A compatible VR headset and USB/PC connection
-- The latest graphics drivers for your GPU
+- A compatible VR headset connected via USB/Link cable or Air Link
+- Up-to-date GPU drivers
 
-## Running the application
+### Install steps
 
-1. Clone or download this repository.
-2. Open the project folder.
-3. Double-click RSAF_VRWarehouse.exe.
-4. If the headset is not detected, open the Oculus app and make sure the headset is connected and authorized.
+1. Download `RSAF_VRWarehouse_Windows.zip` from the [latest release](../../releases/latest).
+2. Extract it anywhere on your PC.
+3. Double-click `RSAF_VRWarehouse.exe`.
+4. If the headset isn't detected, open the Oculus app first and confirm the headset shows as connected.
 
-## Troubleshooting
+### Troubleshooting
 
-- If the application does not start, make sure the Oculus runtime is installed and the headset is connected.
-- If you see missing files, confirm that the full repository contents were downloaded, including RSAF_VRWarehouse_Data/.
-- If the executable is blocked by Windows Defender, choose "Run anyway" after confirming the file is from a trusted source.
+- If the app won't start, confirm the Oculus PC app is running and the headset is connected there first.
+- If you see missing-file errors, make sure the full zip was extracted (including the `RSAF_VRWarehouse_Data/` folder) rather than run in place inside the archive.
+- If Windows Defender blocks the executable, choose "Run anyway" after confirming the download is from this repository's release page.
 
-## Notes for future maintenance
+## About this repository
 
-- This repository currently contains the built application files rather than a full Unity source project export.
-- If you later want to rebuild from source, add the Unity project files and record the Unity version used in this README.
-- If the repository grows large, GitHub may require Git LFS for some binary files.
+- `RSAF_VRWarehouse.exe` / `RSAF_VRWarehouse_Data/` in this repository are the original Windows build files (Git LFS), kept for reference and as the source used to produce the Windows release zip.
+- The Quest APK was produced by reconstructing a working Unity project from this Windows build (via asset/script recovery) and rebuilding for the Android/Quest target, since no original Unity source project was available. Game logic and assets are preserved; some visual details (e.g. certain shaders) may differ slightly from the original PC build as a result.
+- Unity Editor version: **2021.3.12f1**.
 
-## GitHub upload commands
+## Repository layout
 
-If you want to publish this folder to GitHub, run the following from the project folder:
-
-```bash
-git init
-git add .
-git commit -m "Initial import"
-git branch -M main
-git remote add origin https://github.com/<your-username>/<your-repo-name>.git
-git push -u origin main
+```
+RSAF_VRWarehouse.exe          Windows executable (Git LFS)
+RSAF_VRWarehouse_Data/        Windows runtime data (Git LFS)
+MonoBleedingEdge/, *.dll      Windows/Mono runtime support files
 ```
 
-If you prefer, you can also create the repository on GitHub first and then point the remote to it.
+Downloadable builds (Quest `.apk` and Windows `.zip`) are attached to [Releases](../../releases) rather than committed to git, to keep the repository itself lightweight.
