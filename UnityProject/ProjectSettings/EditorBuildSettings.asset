@@ -2,8 +2,8 @@
 %TAG !u! tag:unity3d.com,2011:
 --- !u!1045 &1
 EditorBuildSettings:
-  serializedVersion: 2
   m_ObjectHideFlags: 0
+  serializedVersion: 2
   m_Scenes:
   - enabled: 1
     path: Assets/_MyProject/Scenes/Menu.unity
@@ -23,4 +23,5 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/_MyProject/Scenes/5SD Map.unity
     guid: db47fb73d026c854e8c806bfdd9bfa1a
-  m_configObjects: {}
+  m_configObjects:
+    com.unity.xr.management.loader_settings: {fileID: 11400000, guid: e0ee6ff9443944de58f67e9b38f6d27d, type: 2}
