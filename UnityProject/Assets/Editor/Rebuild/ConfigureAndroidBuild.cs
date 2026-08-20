@@ -32,6 +32,7 @@ public static class ConfigureAndroidBuild
         try
         {
             ConfigureExternalTools();
+            ApplyAndroidExternalToolsApi();
             ConfigurePlayerSettings();
             ConfigureXrForAndroid();
             ConfigureTimeStep();
@@ -55,7 +56,7 @@ public static class ConfigureAndroidBuild
     /// Paths come from the environment so this is not tied to one machine, with the standard
     /// install locations as fallbacks.
     /// </summary>
-    private static void ConfigureExternalTools()
+    public static void ConfigureExternalTools()
     {
         var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 
@@ -92,6 +93,66 @@ public static class ConfigureAndroidBuild
         EditorPrefs.SetString(pathKey, path);
         EditorPrefs.SetBool(useEmbeddedKey, false);
         Debug.Log($"[ConfigureAndroidBuild] {label}: {path}");
+    }
+
+
+    /// <summary>
+    /// Unity 2021.3 reads Android tool locations from UnityEditor.Android.AndroidExternalToolsSettings,
+    /// not from EditorPrefs, so the build fails with "JDK not found" if only EditorPrefs are set.
+    /// Reflected to avoid a hard dependency on the Android extension assembly.
+    /// </summary>
+    public static void ApplyAndroidExternalToolsApi()
+    {
+        var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        var type = AppDomain.CurrentDomain.GetAssemblies()
+            .Select(a => a.GetType("UnityEditor.Android.AndroidExternalToolsSettings"))
+            .FirstOrDefault(t2 => t2 != null);
+
+        if (type == null)
+        {
+            Debug.LogWarning("[ConfigureAndroidBuild] AndroidExternalToolsSettings type not found.");
+            return;
+        }
+
+        SetProperty(type, "jdkRootPath", ResolvePath("UNITY_JDK_PATH",
+            "/opt/homebrew/opt/openjdk@11/libexec/openjdk.jdk/Contents/Home"));
+        SetProperty(type, "sdkRootPath", ResolvePath("UNITY_ANDROID_SDK",
+            Path.Combine(home, "Library/Android/sdk")));
+        SetProperty(type, "ndkRootPath", ResolvePath("UNITY_ANDROID_NDK",
+            Path.Combine(home, "Library/Android/sdk/ndk/21.3.6528147")));
+        SetProperty(type, "gradlePath", ResolvePath("UNITY_GRADLE_PATH",
+            "/Applications/Unity/PlaybackEngines/AndroidPlayer/Tools/gradle"));
+    }
+
+    private static void SetProperty(Type type, string propertyName, string value)
+    {
+        var property = type.GetProperty(propertyName,
+            System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+        if (property == null || !property.CanWrite)
+        {
+            Debug.LogWarning($"[ConfigureAndroidBuild] property '{propertyName}' not settable.");
+            return;
+        }
+
+        if (!Directory.Exists(value))
+        {
+            Debug.LogError($"[ConfigureAndroidBuild] path for '{propertyName}' missing: {value}");
+            return;
+        }
+
+        // Unity's own validator rejects some otherwise-valid JDK layouts. Treat this API as
+        // best-effort: EditorPrefs plus JAVA_HOME still drive the Gradle invocation, so a
+        // rejection here must not abort the whole build.
+        try
+        {
+            property.SetValue(null, value);
+            Debug.Log($"[ConfigureAndroidBuild] AndroidExternalToolsSettings.{propertyName} = {value}");
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning($"[ConfigureAndroidBuild] {propertyName} rejected ('{value}'): " +
+                             $"{e.InnerException?.Message ?? e.Message}");
+        }
     }
 
     private static void ConfigurePlayerSettings()

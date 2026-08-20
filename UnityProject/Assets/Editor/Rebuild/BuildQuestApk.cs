@@ -26,6 +26,10 @@ public static class BuildQuestApk
     {
         try
         {
+            // Tool paths must be set in THIS process; a prior process's settings do not carry.
+            ConfigureAndroidBuild.ConfigureExternalTools();
+            ConfigureAndroidBuild.ApplyAndroidExternalToolsApi();
+
             var scenes = EditorBuildSettings.scenes
                 .Where(s => s.enabled)
                 .Select(s => s.path)
