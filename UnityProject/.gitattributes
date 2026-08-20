@@ -1,0 +1,9 @@
+# The repository root marks *.asset/*.json/*.txt as LFS for the shipped Windows build.
+# Inside the reconstructed Unity project those extensions are mostly small YAML/text
+# source files, so keep them as ordinary git text and reserve LFS for real binaries.
+/ProjectSettings/**  -filter text
+/Packages/**         -filter text
+/Assets/Scripts/**   -filter text
+/Assets/Editor/**    -filter text
+*.cs                 -filter text
+*.shader             -filter text
