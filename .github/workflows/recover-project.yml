@@ -1,0 +1,170 @@
+name: Recover Unity Project
+
+# Stage 1 of the rebuild (see docs/REBUILD_BRIEF.md).
+# Extracts a Unity project from the compiled Windows player and decompiles the
+# game assembly. Needs NO Unity license and NO secrets — pure .NET tooling.
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/recover-project.yml'
+
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+
+    steps:
+      - name: Free disk space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: true
+          dotnet: false
+          haskell: true
+          large-packages: true
+          swap-storage: true
+
+      - name: Report available disk
+        run: df -h /
+
+      - name: Cache LFS objects
+        uses: actions/cache@v4
+        with:
+          path: .git/lfs/objects
+          key: lfs-${{ github.sha }}
+          restore-keys: lfs-
+
+      - name: Checkout (with LFS game data)
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+          fetch-depth: 1
+
+      - name: Verify game data is real, not pointers
+        run: |
+          set -euo pipefail
+          echo "--- sizes ---"
+          du -sh RSAF_VRWarehouse_Data
+          ls -la RSAF_VRWarehouse_Data/level* RSAF_VRWarehouse_Data/Managed/Assembly-CSharp.dll
+          echo "--- header check (must be MZ, not 'version https://git-lfs') ---"
+          head -c 2 RSAF_VRWarehouse_Data/Managed/Assembly-CSharp.dll | xxd
+          test "$(head -c 2 RSAF_VRWarehouse_Data/Managed/Assembly-CSharp.dll)" = "MZ" \
+            || { echo "FAIL: LFS content did not materialise"; exit 1; }
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Download AssetRipper
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/ar"
+          # Pick the linux-x64 asset from the latest release; prefer a CLI/Console build.
+          URL=$(curl -sL https://api.github.com/repos/AssetRipper/AssetRipper/releases/latest \
+            | jq -r '.assets[].browser_download_url' \
+            | grep -i 'linux' | grep -i 'x64' \
+            | sort | head -1)
+          echo "Selected AssetRipper asset: ${URL:-NONE}"
+          test -n "$URL" || { echo "FAIL: no linux-x64 AssetRipper asset found"; exit 1; }
+          curl -sL "$URL" -o "$RUNNER_TEMP/ar.zip"
+          unzip -q "$RUNNER_TEMP/ar.zip" -d "$RUNNER_TEMP/ar"
+          find "$RUNNER_TEMP/ar" -maxdepth 2 -type f | head -40
+          chmod -R +x "$RUNNER_TEMP/ar" || true
+
+      - name: Extract Unity project
+        id: extract
+        continue-on-error: true
+        run: |
+          set -uo pipefail
+          BIN=$(find "$RUNNER_TEMP/ar" -maxdepth 2 -type f \
+            \( -name 'AssetRipper*' -o -name '*Console*' -o -name '*CLI*' \) ! -name '*.dll' ! -name '*.json' \
+            | head -1)
+          echo "Binary: $BIN"
+          test -n "$BIN" || { echo "FAIL: AssetRipper binary not found"; exit 1; }
+          mkdir -p "$GITHUB_WORKSPACE/recovered"
+          "$BIN" -o "$GITHUB_WORKSPACE/recovered" "$GITHUB_WORKSPACE/RSAF_VRWarehouse_Data" \
+            2>&1 | tee "$RUNNER_TEMP/assetripper.log" | tail -200
+          echo "exit=${PIPESTATUS[0]}"
+
+      - name: Decompile Assembly-CSharp.dll
+        continue-on-error: true
+        run: |
+          set -uo pipefail
+          dotnet tool install -g ilspycmd || true
+          export PATH="$PATH:$HOME/.dotnet/tools"
+          mkdir -p "$GITHUB_WORKSPACE/decompiled"
+          ilspycmd -p -o "$GITHUB_WORKSPACE/decompiled" \
+            RSAF_VRWarehouse_Data/Managed/Assembly-CSharp.dll \
+            2>&1 | tee "$RUNNER_TEMP/ilspy.log" | tail -50
+          echo "--- decompiled .cs count ---"
+          find "$GITHUB_WORKSPACE/decompiled" -name '*.cs' | wc -l
+
+      - name: Inventory what was recovered
+        if: always()
+        run: |
+          set -uo pipefail
+          {
+            echo "# Recovery inventory"
+            echo
+            echo "## Disk"
+            df -h / | tail -1
+            echo
+            echo "## Recovered project size"
+            du -sh recovered 2>/dev/null || echo "(no output)"
+            echo
+            echo "## Top-level layout"
+            find recovered -maxdepth 3 -type d 2>/dev/null | head -60
+            echo
+            echo "## Scenes found"
+            find recovered -name '*.unity' 2>/dev/null | head -40
+            echo
+            echo "## Asset counts by extension"
+            find recovered -type f 2>/dev/null | sed 's/.*\.//' | sort | uniq -c | sort -rn | head -30
+            echo
+            echo "## Decompiled sources"
+            find decompiled -name '*.cs' 2>/dev/null | wc -l
+            find decompiled -name '*.cs' 2>/dev/null | head -40
+          } > inventory.md
+          cat inventory.md
+          cat inventory.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload decompiled sources
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: decompiled-sources
+          path: decompiled/
+          if-no-files-found: warn
+
+      - name: Upload inventory and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: recovery-inventory
+          path: |
+            inventory.md
+            ${{ runner.temp }}/assetripper.log
+            ${{ runner.temp }}/ilspy.log
+          if-no-files-found: warn
+
+      - name: Upload recovered project (scenes, prefabs, materials, settings only)
+        if: always()
+        run: |
+          mkdir -p slim
+          for d in recovered/*/Assets recovered/Assets recovered/*/ProjectSettings recovered/ProjectSettings; do
+            [ -d "$d" ] && rsync -a --include='*/' \
+              --include='*.unity' --include='*.prefab' --include='*.mat' \
+              --include='*.asset' --include='*.meta' --include='*.cs' --include='*.json' \
+              --exclude='*' "$d" slim/ 2>/dev/null || true
+          done
+          du -sh slim || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: recovered-project-slim
+          path: slim/
+          if-no-files-found: warn
