@@ -208,6 +208,20 @@ public static class ConfigureAndroidBuild
     /// <summary>Enables the Oculus XR loader on the Android build target.</summary>
     private static void ConfigureXrForAndroid()
     {
+        // Wipe any stale XR configuration first. Extraction left an orphaned
+        // "Open XR Loader" asset behind whose script no longer exists (the OpenXR package was
+        // removed in favour of the Oculus loader the original build used). A loader list with a
+        // broken entry makes XRGeneralSettings fail to deserialise at runtime, so XR never
+        // initialises, the app renders mono, and the compositor shows its loading environment
+        // instead of the game.
+        if (Directory.Exists("Assets/XR"))
+        {
+            AssetDatabase.DeleteAsset("Assets/XR");
+            AssetDatabase.Refresh();
+            Debug.Log("[ConfigureAndroidBuild] removed stale Assets/XR");
+        }
+        EditorBuildSettings.RemoveConfigObject(XRGeneralSettings.k_SettingsKey);
+
         if (!EditorBuildSettings.TryGetConfigObject(XRGeneralSettings.k_SettingsKey,
                 out XRGeneralSettingsPerBuildTarget perTarget) || perTarget == null)
         {
@@ -254,6 +268,16 @@ public static class ConfigureAndroidBuild
         if (loaders.Length == 0)
         {
             throw new InvalidOperationException("Android XR loader list is empty after assignment.");
+        }
+
+        if (settings.Manager.activeLoaders.Any(l => l == null))
+        {
+            throw new InvalidOperationException("Android XR loader list contains a null loader.");
+        }
+
+        if (!loaders.Any(l => l != null && l.Contains("Oculus")))
+        {
+            throw new InvalidOperationException($"Oculus loader missing; got [{string.Join(", ", loaders)}]");
         }
     }
 

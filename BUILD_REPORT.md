@@ -3,8 +3,8 @@
 - Result: **Succeeded**
 - Platform: Android
 - Total size: **3909 MB**
-- Build time: 00:09:05.6153330
-- Errors: 1, Warnings: 197
+- Build time: 00:02:01.6770032
+- Errors: 1, Warnings: 87
 
 ## Largest output files
 
