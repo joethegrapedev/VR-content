@@ -23,6 +23,7 @@ public class PauseMenu : MonoBehaviour
 		if (pauseActive)
 		{
 			Time.timeScale = 1f;
+			AudioListener.pause = false;
 			pauseActive = false;
 			if (!ended)
 			{
@@ -32,6 +33,7 @@ public class PauseMenu : MonoBehaviour
 		else if (!pauseActive)
 		{
 			Time.timeScale = 0f;
+			AudioListener.pause = true;
 			pauseActive = true;
 			if (!ended)
 			{
@@ -43,6 +45,7 @@ public class PauseMenu : MonoBehaviour
 	public void EndGame()
 	{
 		Time.timeScale = 1f;
+		AudioListener.pause = false;
 		RunTimescript.finished = false;
 		RunTimescript.UpdateExcel();
 		RunTimescript.countdown = TimerSettings.setTime;

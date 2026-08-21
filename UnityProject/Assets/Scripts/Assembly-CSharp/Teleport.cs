@@ -28,5 +28,6 @@ public class Teleport : MonoBehaviour
 	{
 		yield return new WaitForSeconds(1f);
 		player.transform.position = new Vector3(teleport.transform.position.x, teleport.transform.position.y, teleport.transform.position.z);
+		GameAudioCues.Teleport(player.transform.position);
 	}
 }

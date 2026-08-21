@@ -11,11 +11,13 @@ public class DoorScript : MonoBehaviour
 
 	public void OpenDoor()
 	{
+		GameAudioCues.DoorOpen(transform.position);
 		animator.SetBool("Open", value: true);
 	}
 
 	public void CloseDoor()
 	{
+		GameAudioCues.DoorClose(transform.position);
 		animator.SetBool("Open", value: false);
 	}
 }

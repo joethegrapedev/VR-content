@@ -115,6 +115,7 @@ public class MyRuntimeTest : MonoBehaviour
 
 	public void UpdateExcel()
 	{
+		GameAudioCues.GameEnd();
 		HSSFWorkbook hSSFWorkbook;
 		using (FileStream fileStream = new FileStream(path + excelName, FileMode.Open, FileAccess.Read))
 		{

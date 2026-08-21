@@ -41,6 +41,7 @@ public class OptionBox : MonoBehaviour
 
 	public void CorrectOption()
 	{
+		GameAudioCues.TaskCorrect(transform.position);
 		scorescript.AddTotal(maxPoint);
 		LeanTween.alpha(checkMarkerRectTransform, 1f, 1f);
 		interactionMenu.SetActive(value: false);
@@ -62,6 +63,7 @@ public class OptionBox : MonoBehaviour
 
 	public void WrongOption()
 	{
+		GameAudioCues.TaskWrong(transform.position);
 		maxPoint -= 10;
 		greenHighlight.SetActive(value: false);
 		redHighlight.SetActive(value: false);

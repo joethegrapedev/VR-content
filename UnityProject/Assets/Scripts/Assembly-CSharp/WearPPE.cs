@@ -25,6 +25,7 @@ public class WearPPE : MonoBehaviour
 	{
 		if (PPEGameobject.tag == "CorrectPPE")
 		{
+			GameAudioCues.TaskCorrect(transform.position);
 			FadeInCorrectCanvas();
 			LTSeq lTSeq = LeanTween.sequence();
 			lTSeq.append(3f);
@@ -39,6 +40,7 @@ public class WearPPE : MonoBehaviour
 		}
 		else if (PPEGameobject.tag == "WrongPPE")
 		{
+			GameAudioCues.TaskWrong(transform.position);
 			FadeInWrongCanvas();
 			LTSeq lTSeq2 = LeanTween.sequence();
 			lTSeq2.append(3f);

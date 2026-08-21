@@ -36,3 +36,9 @@ Desktop.ini
 # Local environment
 .env
 .env.*
+
+# Python tooling (tools/audio)
+__pycache__/
+*.pyc
+.venv/
+audiovenv/

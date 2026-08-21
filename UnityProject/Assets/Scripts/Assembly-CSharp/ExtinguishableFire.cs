@@ -24,6 +24,7 @@ public class ExtinguishableFire : MonoBehaviour
 		if (!m_isExtinguished)
 		{
 			m_isExtinguished = true;
+			GameAudioCues.Extinguish(transform.position);
 			StartCoroutine(Extinguishing());
 		}
 	}

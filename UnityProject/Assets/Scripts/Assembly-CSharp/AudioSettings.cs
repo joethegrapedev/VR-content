@@ -1,74 +1,94 @@
-using System.IO;
 using UnityEngine;
 using UnityEngine.Audio;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
+/// <summary>
+/// Drives the volume sliders in the Audio Settings scene and applies the
+/// saved mixer levels.
+///
+/// Three defects from the recovered original are fixed here:
+///   1. Volumes were only applied in Menu and 5SD Map, so Tutorial, Keyboard
+///      and Leaderboard ignored the player's settings entirely.
+///   2. SaveSettings appended to a shared list on every save, so the second
+///      save wrote stale values at the indices the loader reads.
+///   3. The mixer parameters were not exposed under these names at all, so
+///      every SetFloat call silently did nothing.
+///
+/// The serialized field names are unchanged so existing scene bindings still
+/// resolve.
+/// </summary>
 public class AudioSettings : MonoBehaviour
 {
 	[SerializeField]
 	private AudioMixer myAudioMixer;
 
-	private Audio settings = new Audio();
-
-	private string path;
-
-	private string savePath = "/_MyProject/saves";
-
 	public Slider Dialogue;
 
 	public Slider SFX;
 
+	[Tooltip("Optional — only present in the Audio Settings scene")]
+	public Slider Music;
+
+	[Tooltip("Optional — only present in the Audio Settings scene")]
+	public Slider Ambience;
+
+	private AudioVolumeSettings settings = AudioVolumeSettings.Defaults;
+
+	private AudioMixer Mixer =>
+		(myAudioMixer != null) ? myAudioMixer : AudioLibrary.Mixer;
+
 	protected void Start()
 	{
-		if (!Directory.Exists(SavePaths.SavesDirectory))
+		settings = AudioVolumeSettings.Load();
+		settings.ApplyTo(Mixer);
+		PushToSliders();
+	}
+
+	/// <summary>Mirror the loaded values onto whichever sliders exist.</summary>
+	private void PushToSliders()
+	{
+		SetSlider(Dialogue, settings.Dialogue);
+		SetSlider(SFX, settings.Sfx);
+		SetSlider(Music, settings.Music);
+		SetSlider(Ambience, settings.Ambience);
+	}
+
+	private static void SetSlider(Slider slider, float value)
+	{
+		if (slider != null)
 		{
-			Directory.CreateDirectory(SavePaths.SavesDirectory);
-		}
-		path = SavePaths.AudioSettingsFile;
-		if (SceneManager.GetActiveScene().name == "Menu" || SceneManager.GetActiveScene().name == "5SD Map")
-		{
-			if (!File.Exists(path))
-			{
-				myAudioMixer.SetFloat("Dialogue", -6f);
-				myAudioMixer.SetFloat("SFX", -6f);
-			}
-			else if (File.Exists(path))
-			{
-				myAudioMixer.SetFloat("Dialogue", Mathf.Log10(JsonUtility.FromJson<Audio>(File.ReadAllText(path)).Volume[0]) * 20f);
-				myAudioMixer.SetFloat("SFX", Mathf.Log10(JsonUtility.FromJson<Audio>(File.ReadAllText(path)).Volume[1]) * 20f);
-			}
-		}
-		else if (SceneManager.GetActiveScene().name == "Audio Settings")
-		{
-			if (!File.Exists(path))
-			{
-				myAudioMixer.SetFloat("Dialogue", -6f);
-				myAudioMixer.SetFloat("SFX", -6f);
-			}
-			else if (File.Exists(path))
-			{
-				Dialogue.value = JsonUtility.FromJson<Audio>(File.ReadAllText(path)).Volume[0];
-				SFX.value = JsonUtility.FromJson<Audio>(File.ReadAllText(path)).Volume[1];
-			}
+			slider.SetValueWithoutNotify(value);
 		}
 	}
 
 	public void UpdateDialogue(float sliderValue)
 	{
-		myAudioMixer.SetFloat("Dialogue", Mathf.Log10(sliderValue) * 20f);
+		settings = settings.WithDialogue(sliderValue);
+		settings.ApplyTo(Mixer);
 	}
 
 	public void UpdateSFX(float sliderValue)
 	{
-		myAudioMixer.SetFloat("SFX", Mathf.Log10(sliderValue) * 20f);
+		settings = settings.WithSfx(sliderValue);
+		settings.ApplyTo(Mixer);
 	}
 
+	public void UpdateMusic(float sliderValue)
+	{
+		settings = settings.WithMusic(sliderValue);
+		settings.ApplyTo(Mixer);
+		MusicPlayer.Instance.SetVolume(sliderValue);
+	}
+
+	public void UpdateAmbience(float sliderValue)
+	{
+		settings = settings.WithAmbience(sliderValue);
+		settings.ApplyTo(Mixer);
+	}
+
+	/// <summary>Persist the current values. Wired to the Save button.</summary>
 	public void SaveSettings()
 	{
-		settings.Volume.Add(Dialogue.value);
-		settings.Volume.Add(SFX.value);
-		string contents = JsonUtility.ToJson(settings, prettyPrint: true);
-		File.WriteAllText(path, contents);
+		settings.Save();
 	}
 }
