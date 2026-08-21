@@ -1,10 +1,7 @@
-using System;
-
 /// <summary>
 /// Attaches a looping ambience clip to scene objects whose name contains a
 /// keyword — the faulty strip lights buzz, the vents hiss, and so on.
 /// </summary>
-[Serializable]
 public class AmbienceEmitterRule
 {
 	public readonly string Keyword;

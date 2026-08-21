@@ -130,3 +130,18 @@ Unity -batchmode -quit -projectPath UnityProject -buildTarget Android \
 
 `ValidateAudio.Run` is the corresponding check; it fails the build if a mixer
 group, exposed parameter, required clip or scene director is missing.
+
+## Notes for the headset
+
+Two choices are deliberate and worth knowing if you tune this later:
+
+- `UiSoundBinder.rebindOnInterval` is **off**. The initial bind already uses
+  `includeInactive: true`, so every button present when the scene loads is
+  covered. Turn it on only if UI starts being instantiated at runtime; a
+  repeating full-scene scan is not free on a standalone headset.
+- `FootstepPlayer` resolves the player rig once (it finds `AutoHandPlayer` via
+  the `Player` tag) and warns if it cannot, rather than searching every frame.
+
+Footsteps are driven by distance travelled, not a timer, so the cadence follows
+actual speed. A single frame's movement above `teleportThreshold` is treated as
+teleport locomotion and plays the teleport cue instead of a stride.

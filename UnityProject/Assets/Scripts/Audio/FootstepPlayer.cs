@@ -34,10 +34,13 @@ public class FootstepPlayer : MonoBehaviour
 
 	private bool hasPosition;
 
+	private bool resolveAttempted;
+
 	private void OnEnable()
 	{
 		hasPosition = false;
 		accumulatedDistance = 0f;
+		resolveAttempted = false;
 	}
 
 	private void Update()
@@ -82,12 +85,14 @@ public class FootstepPlayer : MonoBehaviour
 		}
 	}
 
+	/// <summary>Find the player rig once; searching every frame is wasteful.</summary>
 	private Transform ResolveTarget()
 	{
-		if (tracked != null)
+		if (tracked != null || resolveAttempted)
 		{
 			return tracked;
 		}
+		resolveAttempted = true;
 
 		GameObject tagged = GameObject.FindGameObjectWithTag("Player");
 		if (tagged != null)
@@ -100,7 +105,11 @@ public class FootstepPlayer : MonoBehaviour
 		if (main != null)
 		{
 			tracked = main.transform;
+			return tracked;
 		}
-		return tracked;
+
+		Debug.LogWarning("[Audio] No object tagged 'Player' and no main camera; " +
+			"footsteps will be silent in this scene.");
+		return null;
 	}
 }

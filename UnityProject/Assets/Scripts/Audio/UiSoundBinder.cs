@@ -19,10 +19,12 @@ public class UiSoundBinder : MonoBehaviour
 	[Range(0f, 1f)]
 	public float volume = 0.8f;
 
-	[Tooltip("Also bind buttons that appear after the scene has loaded")]
-	public bool rebindOnInterval = true;
+	[Tooltip("Rescan for buttons created after the scene loaded. Off by " +
+		"default: the initial bind already includes inactive objects, and a " +
+		"repeating full-scene scan is not free on a standalone headset.")]
+	public bool rebindOnInterval;
 
-	public float rebindInterval = 3f;
+	public float rebindInterval = 10f;
 
 	private float nextRebind;
 

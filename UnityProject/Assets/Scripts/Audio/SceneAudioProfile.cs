@@ -1,10 +1,7 @@
-using System;
-
 /// <summary>
 /// The audio setup for one scene. Immutable: a scene's profile is looked up,
 /// never edited in place.
 /// </summary>
-[Serializable]
 public class SceneAudioProfile
 {
 	public readonly string SceneName;
