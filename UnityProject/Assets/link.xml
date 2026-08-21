@@ -1,0 +1,15 @@
+<!--
+  IL2CPP strips code it cannot see being used. NPOI and Newtonsoft.Json both resolve
+  types and members reflectively at runtime, so stripping them produces
+  MissingMethodException/TypeInitializationException only once the app is running on
+  device. The leaderboard .xls export depends on this.
+-->
+<linker>
+  <assembly fullname="NPOI" preserve="all"/>
+  <assembly fullname="NPOI.OOXML" preserve="all"/>
+  <assembly fullname="NPOI.OpenXml4Net" preserve="all"/>
+  <assembly fullname="NPOI.OpenXmlFormats" preserve="all"/>
+  <assembly fullname="ICSharpCode.SharpZipLib" preserve="all"/>
+  <assembly fullname="Newtonsoft.Json" preserve="all"/>
+  <assembly fullname="System.Xml" preserve="all"/>
+</linker>

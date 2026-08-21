@@ -26,6 +26,7 @@ public static class ConfigureAndroidBuild
     private const string BundleIdentifier = "com.sp.fyp3a25.rsafvrwarehouse";
     private const string OculusLoaderType = "Unity.XR.Oculus.OculusLoader";
     private const int TargetFrameRateHz = 72;
+    private const string ProductVersion = "0.1.0";  // matches the shipped Windows build
 
     public static void Apply()
     {
@@ -61,7 +62,7 @@ public static class ConfigureAndroidBuild
         var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 
         var jdk = ResolvePath("UNITY_JDK_PATH",
-            "/opt/homebrew/opt/openjdk@11/libexec/openjdk.jdk/Contents/Home");
+            "/Library/Java/JavaVirtualMachines/temurin-8.jdk/Contents/Home");
         var sdk = ResolvePath("UNITY_ANDROID_SDK",
             Path.Combine(home, "Library/Android/sdk"));
         var ndk = ResolvePath("UNITY_ANDROID_NDK",
@@ -70,6 +71,7 @@ public static class ConfigureAndroidBuild
             "/Applications/Unity/PlaybackEngines/AndroidPlayer/Tools/gradle");
 
         SetToolPath("JdkPath", "JdkUseEmbedded", jdk, "JDK");
+
         SetToolPath("AndroidSdkRoot", "SdkUseEmbedded", sdk, "Android SDK");
         // Unity keys the NDK preference by version; r21d is what 2021.3 pins.
         SetToolPath("AndroidNdkRootR21D", "NdkUseEmbedded", ndk, "Android NDK (r21d)");
@@ -115,7 +117,7 @@ public static class ConfigureAndroidBuild
         }
 
         SetProperty(type, "jdkRootPath", ResolvePath("UNITY_JDK_PATH",
-            "/opt/homebrew/opt/openjdk@11/libexec/openjdk.jdk/Contents/Home"));
+            "/Library/Java/JavaVirtualMachines/temurin-8.jdk/Contents/Home"));
         SetProperty(type, "sdkRootPath", ResolvePath("UNITY_ANDROID_SDK",
             Path.Combine(home, "Library/Android/sdk")));
         SetProperty(type, "ndkRootPath", ResolvePath("UNITY_ANDROID_NDK",
@@ -160,7 +162,10 @@ public static class ConfigureAndroidBuild
         var android = NamedBuildTarget.Android;
 
         PlayerSettings.SetScriptingBackend(android, ScriptingImplementation.IL2CPP);
-        PlayerSettings.SetApiCompatibilityLevel(android, ApiCompatibilityLevel.NET_Standard_2_0);
+        // The shipped build's Managed/ folder contains System.Windows.Forms, System.Configuration
+        // and System.Data, which only exist under the .NET Framework profile. NPOI also needs it.
+        // Under .NET Standard 2.0 IL2CPP cannot resolve a system assembly and conversion fails.
+        PlayerSettings.SetApiCompatibilityLevel(android, ApiCompatibilityLevel.NET_Unity_4_8);
 
         // ARM64 only. ARMv7 is what broke the previous build and no current Quest needs it.
         PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
@@ -180,6 +185,14 @@ public static class ConfigureAndroidBuild
         PlayerSettings.Android.targetSdkVersion = AndroidSdkVersions.AndroidApiLevelAuto;
 
         PlayerSettings.SetApplicationIdentifier(android, BundleIdentifier);
+
+        // Gradle rejects a versionCode of 0. Asset extraction does not recover it, so it comes
+        // back as 0 and configuration of the :launcher project fails.
+        if (PlayerSettings.Android.bundleVersionCode < 1)
+        {
+            PlayerSettings.Android.bundleVersionCode = 1;
+        }
+        PlayerSettings.bundleVersion = ProductVersion;
         PlayerSettings.companyName = "SP_FYP_3A25";
         PlayerSettings.productName = "RSAF_VRWarehouse";
 

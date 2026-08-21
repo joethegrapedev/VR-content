@@ -40,6 +40,20 @@ public static class BuildQuestApk
                 throw new InvalidOperationException("No enabled scenes in build settings.");
             }
 
+            // BuildPlayer requires the ACTIVE build target to already be Android. Calling it
+            // while the editor sits on another target trips an internal assertion and then
+            // segfaults. Switching also triggers the one-time ASTC reimport of all textures.
+            if (EditorUserBuildSettings.activeBuildTarget != BuildTarget.Android)
+            {
+                Debug.Log($"[BuildQuestApk] switching active build target " +
+                          $"{EditorUserBuildSettings.activeBuildTarget} -> Android (reimports assets)");
+                if (!EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Android, BuildTarget.Android))
+                {
+                    throw new InvalidOperationException("Could not switch active build target to Android.");
+                }
+            }
+            Debug.Log($"[BuildQuestApk] active build target: {EditorUserBuildSettings.activeBuildTarget}");
+
             Directory.CreateDirectory(OutputDirectory);
             var apkPath = Path.Combine(OutputDirectory, ApkName);
 
@@ -49,16 +63,10 @@ public static class BuildQuestApk
                 Debug.Log($"[BuildQuestApk]   scene: {scene}");
             }
 
-            var options = new BuildPlayerOptions
-            {
-                scenes = scenes,
-                locationPathName = apkPath,
-                target = BuildTarget.Android,
-                targetGroup = BuildTargetGroup.Android,
-                options = BuildOptions.None,
-            };
-
-            var report = BuildPipeline.BuildPlayer(options);
+            // Use the simple overload: the BuildPlayerOptions struct carries extra fields
+            // (subtarget, extraScriptingDefines) whose defaults trip an internal assertion
+            // on this Unity/platform combination.
+            var report = BuildPipeline.BuildPlayer(scenes, apkPath, BuildTarget.Android, BuildOptions.None);
             WriteReport(report);
 
             if (report.summary.result != BuildResult.Succeeded)
