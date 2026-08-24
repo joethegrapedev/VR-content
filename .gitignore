@@ -42,3 +42,14 @@ __pycache__/
 *.pyc
 .venv/
 audiovenv/
+
+# Unity batch-mode build logs and crash dumps (local diagnostics only)
+.unity-*.log
+.unity-*.exit
+mono_crash.*.json
+build-report.md
+validation-report.md
+
+# Downloaded install tooling
+install/platform-tools/
+install/*.apk

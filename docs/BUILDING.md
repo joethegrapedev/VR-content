@@ -1,0 +1,154 @@
+# Rebuilding the app
+
+For developers who need to change the app and produce a new APK.
+
+> **Read this first: cloning the repository is not enough.**
+> About **2.8 GB** of recovered art assets — meshes, textures, scenes, lightmaps — are
+> deliberately **not stored in git**. A fresh clone gives you the scripts, settings and
+> audio generator, but Unity will open a project full of missing references and the
+> build will not produce a usable app. See [Getting the assets](#getting-the-assets).
+
+---
+
+## Why the project is like this
+
+No original Unity project survived. What existed was a compiled Windows player. This
+project was reconstructed from it by extracting assets and decompiling the game
+assembly — see [REBUILD_BRIEF.md](REBUILD_BRIEF.md) for how, and
+[../STATUS.md](../STATUS.md) for the defects that had to be fixed to make it run on a
+headset at all.
+
+Practical consequences:
+
+- Asset folders are named after **Unity type names** (`Mesh/`, `Texture2D/`,
+  `Material/`) rather than anything meaningful, because that is how they were extracted.
+- Scripts are **decompiled C#**. They are readable and correct, but the formatting and
+  some names are not what the original authors wrote.
+- Some visual details differ from the original Windows build, mainly shaders.
+
+---
+
+## What you need
+
+| | |
+|---|---|
+| Unity | **2021.3.12f1** exactly, with the **Android Build Support** module (including OpenJDK and Android SDK/NDK) |
+| Disk | About 15 GB free — the project plus Unity's import cache |
+| Assets | The 2.8 GB asset set, which is not in git |
+| Python | 3.9+ with `numpy`, only if you want to regenerate audio |
+
+Unity version matters. The decompiled sources target **C# 9**; a newer Unity will
+happily compile things this project cannot, and an older one will not compile it at all.
+
+## Getting the assets
+
+The assets are not in the repository because storing them would need paid Git LFS
+capacity, and they can be recovered deterministically from the original Windows build.
+
+Options, best first:
+
+1. **Copy `UnityProject/Assets/` from a machine that already has it.** Fastest and most
+   reliable. The untracked folders are `Mesh/`, `Texture2D/`, `Material/`, `Sprite/`,
+   `AudioClip/`, `AnimationClip/`, `Cubemap/`, `GameObject/`, `MonoBehaviour/`,
+   `Font/`, `Avatar/`, `AnimatorController/`, `PhysicMaterial/`, `Resources/` and
+   `_MyProject/`.
+2. **Re-extract from the Windows build** that *is* in this repository
+   (`RSAF_VRWarehouse.exe` and `RSAF_VRWarehouse_Data/`, stored in Git LFS) using
+   AssetRipper. This is how they were produced originally. Expect to redo some of the
+   fixes in [../STATUS.md](../STATUS.md).
+
+If the project owner decides to pay for LFS capacity later, committing
+`UnityProject/Assets/` would make a plain clone sufficient and this section unnecessary.
+
+---
+
+## Building
+
+### From the command line
+
+```bash
+"/Applications/Unity/Hub/Editor/2021.3.12f1/Unity.app/Contents/MacOS/Unity" \
+  -batchmode -quit \
+  -projectPath UnityProject \
+  -executeMethod BuildQuestApk.Build \
+  -logFile .unity-build.log
+```
+
+The APK lands at `UnityProject/Builds/Android/RSAF_VRWarehouse.apk`, alongside
+`build-report.md` with a per-scene and per-asset-type size breakdown.
+
+The first run also imports the whole project, which takes a long time — well over an
+hour is normal. Later builds are much faster.
+
+### From the Unity editor
+
+Open `UnityProject`, then **File → Build Settings**, target **Android**, and Build.
+The editor scripts under `Assets/Editor/Rebuild/` do the configuration that the
+command-line path applies automatically, so prefer the command line if you can.
+
+### Verifying a build
+
+```bash
+# should report v2 scheme: true
+apksigner verify --print-certs UnityProject/Builds/Android/RSAF_VRWarehouse.apk
+
+# should report arm64-v8a, and the VR category
+aapt2 dump badging UnityProject/Builds/Android/RSAF_VRWarehouse.apk | grep -E "native-code|package"
+```
+
+A correct build has:
+
+- `native-code: 'arm64-v8a'`
+- `com.oculus.intent.category.VR` in the manifest
+- APK Signature Scheme **v2** verifying
+- roughly **1 GB** size — a much smaller APK means assets went missing
+
+---
+
+## Signing, and why updates get refused
+
+Builds are signed with Unity's **debug keystore**, which is generated per machine at
+`~/.android/debug.keystore`. Two consequences:
+
+- A build made on a different machine has a **different signature**, and Android refuses
+  to update an installed app whose signature does not match. Users have to uninstall
+  first, which **deletes their stored results**.
+- The current published build's certificate is SHA-256 `01d8a1a3…73b5a2`.
+
+If this app is going to be updated in the field more than occasionally, generate one
+**release keystore**, store it securely, and configure Unity to use it for every build.
+That removes the uninstall step permanently. It is a small change worth making before
+the app is widely deployed rather than after.
+
+---
+
+## Audio
+
+Every music, ambience and effect file is generated by the Python toolkit in
+`tools/audio/` rather than licensed from anywhere. To regenerate:
+
+```bash
+python3 -m venv .venv && source .venv/bin/activate
+pip install numpy
+python tools/audio/generate.py
+python tools/audio/verify.py    # QA gate: peaks, DC offset, loop seams
+```
+
+Generation is **deterministic** — the same seed produces byte-identical files, and each
+clip is seeded from its own name, so adding or reordering clips cannot change any other
+clip's output. Full detail in [AUDIO.md](AUDIO.md).
+
+---
+
+## Known issues to be aware of
+
+- **Quest 3 metadata.** The bundled Oculus XR plugin predates Quest 3, so it can only
+  declare `quest|quest2` support. Sideloaded apps are not gated on this, so it runs
+  anyway, but a store submission would need a newer plugin.
+- **Size.** The APK is about 1 GB, dominated by 1.4 GB of meshes and 1.1 GB of textures
+  in the source project. Texture compression settings are the obvious lever if this
+  needs to come down.
+- **Not performance-tuned.** The build renders correctly but no profiling pass has been
+  done on-device.
+- **`Music_Tension`** is generated and shipped but not yet triggered by any gameplay
+  event.
