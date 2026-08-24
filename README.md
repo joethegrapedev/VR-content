@@ -22,10 +22,10 @@ The quick version:
 
 1. Turn on Developer Mode for the headset, once, using the Meta Horizon phone app.
 2. Plug the headset into a computer with a USB-C cable.
-3. Download this repository and double-click the installer for your computer:
-   - Windows → `install/install-on-quest-windows.bat`
-   - Mac → `install/install-on-quest-mac.command`
-4. The installer downloads everything else it needs and does the rest.
+3. From the [latest release](../../releases/latest), download
+   `install-on-quest-windows.bat` (Windows) or `Install-on-Quest-Mac.zip` (Mac).
+4. Double-click it. The installer fetches the app and does the rest — you do not need to
+   download the 1 GB `.apk` yourself.
 
 ## Collect trainee results
 

@@ -70,17 +70,23 @@ it only appears when the headset is awake and being worn.
 
 ---
 
-## Part 2 — Get the files onto the computer
+## Part 2 — Get the installer
 
-1. Go to the project page on GitHub.
-2. Click the green **Code** button, then **Download ZIP**.
-3. Find the downloaded ZIP in your Downloads folder and **unzip it**
-   (Windows: right-click → *Extract All*. Mac: double-click it).
+Go to the **[latest release](../../releases/latest)** and download the one file for your
+computer:
 
-You now have a folder containing an `install` folder. That is the one you need.
+| Computer | Download |
+|---|---|
+| Windows | `install-on-quest-windows.bat` |
+| Mac | `Install-on-Quest-Mac.zip` — then unzip it |
 
-> You do **not** need a GitHub account, and you do not need to understand the rest of
-> the files in there.
+That is all you need. The installer fetches the app itself, so **do not** download the
+1 GB `.apk` by hand.
+
+> You do not need a GitHub account, and you do not need the rest of the repository.
+
+If you would rather have everything at once, the green **Code → Download ZIP** button on
+the project page gives you the installers plus all the documentation.
 
 ---
 
