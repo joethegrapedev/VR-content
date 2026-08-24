@@ -8,6 +8,10 @@ detail are in **[../INSTALL.md](../INSTALL.md)**.
 | Put the app on a headset | `install-on-quest-windows.bat` | `install-on-quest-mac.command` |
 | Copy trainee results off a headset | `get-results-windows.bat` | `get-results-mac.command` |
 
+Also here: **`headset-card.html`** — a printable sheet of eight cut-out cards with a
+QR code linking to the install instructions. Attach one to each headset or its case so
+whoever picks it up can find the app. Open it in a browser and print at 100% scale.
+
 ## What the installer does
 
 1. Looks for Google's Android device tools (`adb`). If they are not on the computer, it

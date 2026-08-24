@@ -156,6 +156,11 @@ Each additional headset needs:
 
 Part 1.1 and Part 2 are done once in total, not once per headset.
 
+**Tip for managing several headsets:** open `install/headset-card.html` in a browser and
+print it at 100% scale. You get eight small cards carrying a QR code to these
+instructions — attach one to each headset or its case, so anyone who picks it up later
+can find the app without hunting for this document.
+
 ---
 
 ## Collecting trainee results
