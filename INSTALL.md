@@ -124,9 +124,35 @@ Apple or Microsoft.
 
 ## Part 4 — Open the app in the headset
 
+### First: get out of Quest Link
+
+**This is the step people get wrong, and it produces a confusing error.**
+
+Plugging the headset into a computer often prompts you to start **Quest Link** (also
+called Air Link or PC Link). Link turns the headset into a display for your PC, and in
+that mode it can only run **PC** VR software.
+
+This app runs *on the headset itself*, so it cannot start while Link is active. If you
+try, the headset says:
+
+> **Can't launch app** — sorry, we can't launch this app at the moment
+
+That message does not mean the app is broken. It means the headset is in the wrong mode.
+
+**To leave Link:** press the **Oculus button** on the right controller to open the menu,
+then select **Quit Quest Link** (or **Desktop → Exit**). If you are unsure, the reliable
+way is to **unplug the USB cable and restart the headset** — it will boot into normal
+standalone mode. You do not need the cable any more at this point; the app runs entirely
+on the headset.
+
+You are in the right mode when you can see your own Quest home environment rather than a
+view of your PC desktop.
+
+### Then: find the app
+
 Sideloaded apps do not appear alongside normal apps, which catches everybody out.
 
-1. Put the headset on. You can unplug the cable now.
+1. Put the headset on. The cable can stay unplugged.
 2. Open the **App Library** (the grid icon on the toolbar).
 3. Find the **filter dropdown in the top-right corner** — it usually says *All*.
 4. Change it to **Unknown Sources**.
@@ -134,6 +160,10 @@ Sideloaded apps do not appear alongside normal apps, which catches everybody out
 
 > If the list is empty, the install did not actually finish. Go back to Part 3 and watch
 > the window for an error message.
+
+> If the app is listed but still will not start, run the diagnostic — `diagnose-quest-windows.bat`
+> or `diagnose-quest-mac.command` in the `install` folder. It saves a report to your
+> Desktop that says exactly what the headset did.
 
 ---
 

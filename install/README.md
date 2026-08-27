@@ -7,6 +7,7 @@ detail are in **[../INSTALL.md](../INSTALL.md)**.
 |---|---|---|
 | Put the app on a headset | `install-on-quest-windows.bat` | `install-on-quest-mac.command` |
 | Copy trainee results off a headset | `get-results-windows.bat` | `get-results-mac.command` |
+| Work out why it won't install or launch | `diagnose-quest-windows.bat` | `diagnose-quest-mac.command` |
 
 Also here: **`headset-card.html`** — a printable sheet of eight cut-out cards with a
 QR code linking to the install instructions. Attach one to each headset or its case so

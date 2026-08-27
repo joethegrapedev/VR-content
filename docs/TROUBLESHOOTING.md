@@ -97,6 +97,36 @@ mobile connection usually solves it.
 
 ## Running the app
 
+### "Can't launch app — sorry, we can't launch this app at the moment"
+
+**The headset is in Quest Link mode.** This is by far the most common cause.
+
+Link (also called Air Link or PC Link) turns the headset into a display for a PC, and in
+that mode it only runs **PC** VR software. This app runs on the headset itself, so the
+launcher refuses it and shows exactly this message. The app is not broken.
+
+Leave Link and try again:
+
+1. Press the **Oculus button** on the right controller.
+2. Select **Quit Quest Link** (or **Desktop → Exit**).
+3. If unsure, **unplug the USB cable and restart the headset** — it boots into normal
+   standalone mode.
+4. Launch the app again from **App Library → Unknown Sources**.
+
+You are in the right mode when you see your own Quest home environment rather than your
+PC desktop.
+
+**Other causes**, if you were definitely not in Link:
+
+- The headset is nearly full. The app needs about 2 GB free plus room to run.
+- The install was interrupted, leaving a partial app. Uninstall and install again.
+- The headset has not been restarted since the app was installed.
+
+If none of that helps, run the diagnostic — `diagnose-quest-windows.bat` or
+`diagnose-quest-mac.command` in the `install` folder. It launches the app in a way that
+bypasses the headset's launcher and records what happens. If the app runs that way but
+not from the library, the problem is the launcher, not the app.
+
 ### The app is not in the headset's library
 
 Sideloaded apps are hidden by default. In **App Library**, change the filter in the
@@ -159,13 +189,24 @@ results before uninstalling or replacing the app.
 
 ## Still stuck
 
-Collect this before asking for help — it makes the difference between a guess and an answer:
+**Run the diagnostic.** Plug the headset in and double-click:
 
-1. Which headset model, and which computer operating system.
-2. The exact text of the error, or a photo of the window.
-3. The output of `adb devices`.
-4. A log from the headset while reproducing the problem:
+| Computer | File |
+|---|---|
+| Windows | `install/diagnose-quest-windows.bat` |
+| Mac | `install/diagnose-quest-mac.command` |
 
-   ```
-   adb logcat -s Unity:V "[Audio]":V *:E
-   ```
+It checks the connection, records the headset model and free space, confirms whether the
+app is installed, then launches it while recording the log. A report lands on your
+Desktop as `RSAF-diagnostics-<date>.txt`. Send that file on.
+
+It reads only the headset model, the app version and the launch log — no personal
+information — and changes nothing on the headset.
+
+If you would rather do it by hand:
+
+```
+adb devices
+adb shell getprop ro.product.model
+adb logcat -s Unity:V "[Audio]":V *:E
+```
